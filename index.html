@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DNS Lookup Tester</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 30px;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      width: 120px;
+      font-weight: bold;
+    }
+
+    .input-group input,
+    .input-group select {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f4f4f4;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>DNS Lookup Tester</h1>
+    <div class="input-group">
+      <label for="domain">Domain:</label>
+      <input type="text" id="domain" placeholder="Enter a domain">
+    </div>
+    <div class="input-group">
+      <label for="record-type">Record Type:</label>
+      <select id="record-type">
+        <option value="A">A</option>
+        <option value="AAAA">AAAA</option>
+        <option value="CNAME">CNAME</option>
+        <option value="MX">MX</option>
+        <option value="NS">NS</option>
+        <option value="PTR">PTR</option>
+        <option value="SOA">SOA</option>
+        <option value="SRV">SRV</option>
+        <option value="TXT">TXT</option>
+      </select>
+    </div>
+    <button id="test-btn">Test DNS Lookup</button>
+    <div id="result"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const domainInput = document.getElementById('domain');
+    const recordTypeSelect = document.getElementById('record-type');
+    const testBtn = document.getElementById('test-btn');
+    const resultDiv = document.getElementById('result');
+
+    async function testDNSLookup(domain, recordType) {
+      const startTime = performance.now();
+      const url = `https://dns.google/resolve?name=${domain}&type=${recordType}`;
+
+      try {
+        const response = await axios.get(url);
+        const endTime = performance.now();
+        const dnsLookupTime = endTime - startTime;
+        
+        return {
+          dnsLookupTime,
+          data: response.data
+        };
+      } catch (error) {
+        throw new Error('Failed to perform DNS lookup');
+      }
+    }
+
+    testBtn.addEventListener('click', async () => {
+      const domain = domainInput.value;
+      const recordType = recordTypeSelect.value;
+
+      resultDiv.textContent = "Performing DNS lookup...";
+
+      try {
+        const { dnsLookupTime, data } = await testDNSLookup(domain, recordType);
+        resultDiv.innerHTML = `
+          <p>DNS lookup time for ${recordType} record: ${dnsLookupTime.toFixed(2)} ms</p>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        resultDiv.textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
