@@ -72,8 +72,12 @@
   <div class="container">
     <h1>DNS Lookup Tester</h1>
     <div class="input-group">
-      <label for="domain">Domain:</label>
-      <input type="text" id="domain" placeholder="Enter a domain">
+      <label for="domain1">Domain 1:</label>
+      <input type="text" id="domain1" placeholder="Enter first domain">
+    </div>
+    <div class="input-group">
+      <label for="domain2">Domain 2:</label>
+      <input type="text" id="domain2" placeholder="Enter second domain">
     </div>
     <div class="input-group">
       <label for="record-type">Record Type:</label>
@@ -94,7 +98,8 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script>
-    const domainInput = document.getElementById('domain');
+    const domain1Input = document.getElementById('domain1');
+    const domain2Input = document.getElementById('domain2');
     const recordTypeSelect = document.getElementById('record-type');
     const testBtn = document.getElementById('test-btn');
     const resultDiv = document.getElementById('result');
@@ -107,10 +112,10 @@
         const response = await axios.get(url);
         const endTime = performance.now();
         const dnsLookupTime = endTime - startTime;
-        
+
         return {
           dnsLookupTime,
-          data: response.data
+          data: response.data.Answer || "No records found."
         };
       } catch (error) {
         throw new Error('Failed to perform DNS lookup');
@@ -118,16 +123,30 @@
     }
 
     testBtn.addEventListener('click', async () => {
-      const domain = domainInput.value;
+      const domain1 = domain1Input.value;
+      const domain2 = domain2Input.value;
       const recordType = recordTypeSelect.value;
 
       resultDiv.textContent = "Performing DNS lookup...";
 
       try {
-        const { dnsLookupTime, data } = await testDNSLookup(domain, recordType);
+        const [result1, result2] = await Promise.all([
+          testDNSLookup(domain1, recordType),
+          testDNSLookup(domain2, recordType)
+        ]);
+
+        const fasterDomain = result1.dnsLookupTime < result2.dnsLookupTime ? domain1 : domain2;
+        const slowerDomain = fasterDomain === domain1 ? domain2 : domain1;
+        const fasterTime = Math.min(result1.dnsLookupTime, result2.dnsLookupTime);
+        const slowerTime = Math.max(result1.dnsLookupTime, result2.dnsLookupTime);
+
         resultDiv.innerHTML = `
-          <p>DNS lookup time for ${recordType} record: ${dnsLookupTime.toFixed(2)} ms</p>
-          <pre>${JSON.stringify(data, null, 2)}</pre>
+          <h3>Results:</h3>
+          <p><strong>${fasterDomain}</strong> responded faster (${fasterTime.toFixed(2)} ms) than <strong>${slowerDomain}</strong> (${slowerTime.toFixed(2)} ms)</p>
+          <h4>${domain1} Results (${recordType} record):</h4>
+          <pre>${JSON.stringify(result1.data, null, 2)}</pre>
+          <h4>${domain2} Results (${recordType} record):</h4>
+          <pre>${JSON.stringify(result2.data, null, 2)}</pre>
         `;
       } catch (error) {
         resultDiv.textContent = `Error: ${error.message}`;
